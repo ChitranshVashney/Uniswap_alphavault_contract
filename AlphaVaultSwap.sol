@@ -19,7 +19,7 @@ interface IWETH {
     ) external returns (bool);
 }
 
-contract AlphaVaultSwap {
+contract TokenSwapper {
     using SafeERC20 for IERC20;
 
     IWETH private weth;
@@ -50,15 +50,15 @@ contract AlphaVaultSwap {
         uint256[] memory amountsOut = uniswapRouter.getAmountsOut(amounts[i], path);
         require(amountsOut[0] > 0, "TokenSwapper: Invalid swap");
 
-        // Check allowance
-        uint allowance = IERC20(tokens[i]).allowance(msg.sender, address(this));
-        require(allowance >= amounts[i], "TokenSwapper: Insufficient allowance");
 
         // Transfer tokens from the user's wallet to the contract address
-        IERC20(tokens[i]).safeTransferFrom(msg.sender, address(this), amounts[i]);
+        IERC20(tokens[i]).transfer(address(this), amounts[i]);
 
         // Approve the transfer of tokens to Uniswap Router
         IERC20(tokens[i]).approve(address(uniswapRouter), amounts[i]);
+        // Check allowance
+        uint allowance = IERC20(tokens[i]).allowance(msg.sender, address(this));
+        require(allowance >= amounts[i], "TokenSwapper: Insufficient allowance");
 
         // Swap tokens for WETH
         uniswapRouter.swapExactTokensForTokens(
@@ -81,41 +81,41 @@ contract AlphaVaultSwap {
     
 
 
-    // function swapWethToTokens(address[] calldata inputTokens,address[] calldata outputTokens,uint[] calldata inputAmounts, uint[] calldata pecentageAmounts) external payable {
-    //     require(outputTokens.length == pecentageAmounts.length, "Invalid input");
-    //     wethAmount=0;
+    function swapWethToTokens(address[] calldata inputTokens,address[] calldata outputTokens,uint[] calldata inputAmounts, uint[] calldata pecentageAmounts) external payable {
+        require(outputTokens.length == pecentageAmounts.length, "Invalid input");
+        wethAmount=0;
 
-    //     weth.deposit{value: msg.value}();
-    //     wethAmount+=msg.value;
+        weth.deposit{value: msg.value}();
+        wethAmount+=msg.value;
 
-    //     swapToWeth(inputTokens,inputAmounts);
-    //     // Approve the Uniswap router to spend WETH tokens
-    //     weth.approve(address(uniswapRouter), wethAmount);
+        swapToWeth(inputTokens,inputAmounts);
+        // Approve the Uniswap router to spend WETH tokens
+        weth.approve(address(uniswapRouter), wethAmount);
         
-    //     // Path for the WETH to token swaps
-    //     address[] memory path = new address[](2);
-    //     path[0] = address(weth);
+        // Path for the WETH to token swaps
+        address[] memory path = new address[](2);
+        path[0] = address(weth);
         
-    //     // Loop through all the tokens to be swapped
-    //     for (uint i = 0; i < outputTokens.length; i++) {
-    //         if(outputTokens[i]==address(weth)){
-    //             continue;
-    //         }
-    //         path[1] = outputTokens[i];
-    //         uint256[] memory amountsout = uniswapRouter.getAmountsOut(wethAmount*pecentageAmounts[i]/100, path);
-    //         require(amountsout[1] > 0, "TokenSwapper: Invalid swap");
+        // Loop through all the tokens to be swapped
+        for (uint i = 0; i < outputTokens.length; i++) {
+            if(outputTokens[i]==address(weth)){
+                continue;
+            }
+            path[1] = outputTokens[i];
+            uint256[] memory amountsout = uniswapRouter.getAmountsOut(wethAmount*pecentageAmounts[i]/100, path);
+            require(amountsout[1] > 0, "TokenSwapper: Invalid swap");
             
-    //         // Execute the swap
-    //         uniswapRouter.swapExactTokensForTokens(
-    //             wethAmount*pecentageAmounts[i]/100,
-    //             amountsout[1],
-    //             path,
-    //             address(this),
-    //             block.timestamp
-    //         );
-    //         emit make_weth(path[0],path[1],amountsout);
-    //     }
-    // }
+            // Execute the swap
+            uniswapRouter.swapExactTokensForTokens(
+                wethAmount*pecentageAmounts[i]/100,
+                amountsout[1],
+                path,
+                address(this),
+                block.timestamp
+            );
+            emit make_weth(path[0],path[1],amountsout);
+        }
+    }
 
 
 }
