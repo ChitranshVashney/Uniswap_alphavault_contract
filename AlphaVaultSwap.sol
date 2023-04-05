@@ -52,8 +52,8 @@ contract TokenSwapper {
 
 
         // Transfer tokens from the user's wallet to the contract address
-        IERC20(tokens[i]).transfer(address(this), amounts[i]);
 
+        IERC20(tokens[i]).transferFrom(msg.sender, address(this), amounts[i]);
         // Approve the transfer of tokens to Uniswap Router
         IERC20(tokens[i]).approve(address(uniswapRouter), amounts[i]);
         // Check allowance
